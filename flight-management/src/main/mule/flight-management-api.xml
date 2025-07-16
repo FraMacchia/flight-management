@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd ">
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
     <http:listener-config name="flight-management-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
     <apikit:config name="flight-management-api-config" api="resource::97632a37-7ac2-4be0-b300-870a59e81931:flight-management-api:1.0.1:raml:zip:flight-management-api.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-    <flow name="flight-management-api-main">
+    <db:config name="Database_Config" doc:name="Database Config" doc:id="b8c301a8-4b12-4f0b-a4cd-fcf49cccb0a4" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/flightmanagement" driverClassName="org.postgresql.Driver" user="postgres" password="postgres" />
+	</db:config>
+	<flow name="flight-management-api-main">
         <http:listener config-ref="flight-management-api-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers>#[vars.outboundHeaders default {}]</http:headers>
@@ -144,7 +148,12 @@ output application/json
 } as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="a588aa65-7d29-4b35-bf83-630b20f09310" message="#[attributes.uriParams]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a588aa65-7d29-4b35-bf83-630b20f09310" message="#[attributes.uriParams.id]"/>
+		<db:select doc:name="Select" doc:id="b2c1d9a5-b202-4656-bbef-2187461076d1" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM test.flight WHERE fnumber = :id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[id: attributes.uriParams.id]]]></db:input-parameters>
+		</db:select>
+		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload" doc:id="66864cb4-692f-4937-9cc2-165b770a36ab" />
     </flow>
     <flow name="post:\flight:application\json:flight-management-api-config">
         <ee:transform doc:name="Transform Message">
