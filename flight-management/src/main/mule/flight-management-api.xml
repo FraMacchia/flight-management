@@ -144,6 +144,7 @@ output application/json
 } as Object {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
             </ee:message>
         </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="a588aa65-7d29-4b35-bf83-630b20f09310" message="#[attributes.uriParams]"/>
     </flow>
     <flow name="post:\flight:application\json:flight-management-api-config">
         <ee:transform doc:name="Transform Message">
