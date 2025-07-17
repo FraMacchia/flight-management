@@ -158,6 +158,25 @@ output application/json
 		</db:select>
 		<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;payload]" doc:name="Set Payload" doc:id="66864cb4-692f-4937-9cc2-165b770a36ab" />
 		<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="b9db6c01-dacf-41d4-a41d-6fad18d67dd3" config-ref="Validation_Config"/>
+		<set-variable value="#[payload[0].departurecity]" doc:name="Set Variable" doc:id="de84f63a-7611-463a-b1f6-3f407b8caaa4" variableName="cittaPartenza"/>
+		<logger level="INFO" doc:name="Logger" doc:id="a36e41e7-643f-4e4f-8396-002b9e6eb19c" message="#[vars.cittaPartenza]" />
+		<db:select doc:name="Select" doc:id="fcea01c6-938c-407c-b200-d649905aedca" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM test.flight WHERE departurecity =:cittaPartenza]]></db:sql>
+			<db:input-parameters ><![CDATA[#[cittaPartenza: vars.cittaPartenza]]]></db:input-parameters>
+		</db:select>
+		<logger level="INFO" doc:name="Logger" doc:id="2f5c520e-b372-4225-9b85-eaa0a531f54f" message="#[payload]" />
+		<foreach doc:name="For Each" doc:id="ea557952-8e20-43be-9910-35669b9456a5" collection="#[payload]">
+			<db:update doc:name="Update" doc:id="91ca2476-56b2-4e42-bdcd-4f9e233935d8" config-ref="Database_Config">
+				<db:sql ><![CDATA[UPDATE test.flight
+SET ftime =:Newftime
+where fnumber =:fnumber]]></db:sql>
+				<db:input-parameters ><![CDATA[#[{
+Newftime: payload.ftime + 60,
+fnumber: payload.fnumber	
+}]]]></db:input-parameters>
+			</db:update>
+		</foreach>
+		<set-payload value='#["Il volo " ++ vars.numeroVolo as String ++ " subirà un ritardo di 60 minuti"]' doc:name="Set Payload" doc:id="5bda0d2b-ec7d-42c4-9ceb-d8e5fb9b5291" />
 		<error-handler>
 			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e9a26c7b-b8f4-4879-81a5-4a182877b36a" type="VALIDATION:EMPTY_COLLECTION">
 				<set-variable value="404" doc:name="Set Variable" doc:id="c1eaeb63-471e-473e-a6dd-62716c0efc37" variableName="httpStatus"/>
