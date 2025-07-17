@@ -160,6 +160,7 @@ output application/json
 		<validation:is-not-empty-collection doc:name="Is not empty collection" doc:id="b9db6c01-dacf-41d4-a41d-6fad18d67dd3" config-ref="Validation_Config"/>
 		<error-handler>
 			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e9a26c7b-b8f4-4879-81a5-4a182877b36a" type="VALIDATION:EMPTY_COLLECTION">
+				<set-variable value="404" doc:name="Set Variable" doc:id="c1eaeb63-471e-473e-a6dd-62716c0efc37" variableName="httpStatus"/>
 				<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;  error: "Il volo " ++ vars.numeroVolo as String  ++ " non è stato trovato"&#10;}]' doc:name="Set Payload" doc:id="4cf8a722-c6cc-4e1e-b7fe-a8413bce0eb4" />
 			</on-error-continue>
 		</error-handler>
