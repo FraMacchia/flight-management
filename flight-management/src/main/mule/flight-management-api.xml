@@ -185,13 +185,33 @@ fnumber: payload.fnumber
 		</error-handler>
     </flow>
 	<flow name="post:\flight:application\json:flight-management-api-config">
-        <ee:transform doc:name="Transform Message">
-            <ee:message>
-                <ee:set-payload><![CDATA[%dw 2.0
-output application/json
----
-"Volo creato correttamente" as String {encoding: "UTF-8", mediaType: "application/json"}]]></ee:set-payload>
-            </ee:message>
-        </ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0389e5bc-17ed-442e-86d5-1cd6aaf84c6b" message="#[payload]"/>
+		<set-variable value="#[%dw 2.0&#10;output application/json&#10;---&#10;now() as Date]" doc:name="Set Variable" doc:id="4729676c-5ad0-4f62-b5fa-0d5352486dc3" variableName="data_odierna" />
+		<set-variable value="#[payload.FlightNumber]" doc:name="Set Variable" doc:id="ca0451bc-e857-4935-aa1c-addbfe4f02b2" variableName="numero_volo"/>
+		<choice doc:name="Choice" doc:id="77ff7b3e-63ef-45fb-8cf8-11afdcfcac7c" >
+			<when expression="#[payload.FlightDate as Date &gt;= vars.data_odierna]">
+				<db:insert doc:name="Insert" doc:id="6e692eee-bbf0-4975-bdc0-e3b4d47c2891" config-ref="Database_Config">
+					<db:sql ><![CDATA[INSERT INTO test.flight(fnumber,airline, departurecity, destinationcity, fdate, ftime)
+VALUES(:fnumber, :airline, :departurecity, :destinationcity, :fdate, :ftime)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[{fnumber: payload.FlightNumber,
+airline: payload.Airline,
+departurecity: payload.DepartureCity,
+destinationcity: payload.DestinationCity,
+fdate: payload.FlightDate as Date,
+ftime: payload.FlightTime
+}]]]></db:input-parameters>
+				</db:insert>
+				<set-payload value='#["Il volo è stato aggiunto correttamente"]' doc:name="Set Payload" doc:id="9a61a052-81fa-4852-9aa2-262835eda778" />
+			</when>
+			<otherwise>
+				<set-payload value='#["La data del volo è precedente alla data odierna"]' doc:name="Set Payload" doc:id="d6d590c9-8348-4b16-a617-8827fada9913" />
+			</otherwise>
+		</choice>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4e423429-066f-4016-b012-eae55f702bad" type="ANY">
+				<set-variable value="400" doc:name="Set Variable" doc:id="450eb33c-580f-4ce6-9340-133f906352ed" variableName="httpStatus"/>
+				<set-payload doc:name="Set Payload" doc:id="9d411618-d4ca-49e4-9dc5-0a240e819607" value='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;  error: "Il numero " ++ vars.numero_volo as String  ++ " è già associato ad un volo presente nel database"&#10;}]'/>
+			</on-error-propagate>
+		</error-handler>
     </flow>
 </mule>
