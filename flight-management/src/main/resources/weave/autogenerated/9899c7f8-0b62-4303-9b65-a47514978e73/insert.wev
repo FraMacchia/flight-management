@@ -1,0 +1,9 @@
+%dw 2.0
+
+type auto_9899c7f8_0b62_4303_9b65_a47514978e73_Output_Variables_paylaod_insert = {|
+  affectedRows?: Number, 
+  generatedKeys?: { _?: Number }
+|} {"typeAlias": "StatementResult",
+"typeId": "org.mule.extension.db.api.StatementResult",
+"class": "org.mule.extension.db.api.StatementResult"}
+
