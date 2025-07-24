@@ -177,7 +177,7 @@ fnumber: payload.fnumber
 }]]]></db:input-parameters>
 			</db:update>
 		</foreach>
-		<set-payload value='#["Il volo " ++ vars.numeroVolo as String ++ " subirà un ritardo di 60 minuti"]' doc:name="Set Payload" doc:id="5bda0d2b-ec7d-42c4-9ceb-d8e5fb9b5291" />
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Il volo " ++ vars.numeroVolo as String ++ "e tutti i voli in partenza da "++&#10; (vars.cittaPartenza default "sconosciuto") ++ " subiranno un ritardo di 60 minuti"]' doc:name="Set Payload" doc:id="5bda0d2b-ec7d-42c4-9ceb-d8e5fb9b5291" />
 		<error-handler>
 			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e9a26c7b-b8f4-4879-81a5-4a182877b36a" type="VALIDATION:EMPTY_COLLECTION">
 				<set-variable value="404" doc:name="Set Variable" doc:id="c1eaeb63-471e-473e-a6dd-62716c0efc37" variableName="httpStatus"/>
