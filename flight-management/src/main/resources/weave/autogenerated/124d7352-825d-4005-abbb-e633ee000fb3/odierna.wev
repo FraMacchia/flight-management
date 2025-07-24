@@ -1,0 +1,4 @@
+%dw 2.0
+
+type auto_124d7352_825d_4005_abbb_e633ee000fb3_Output_Variables_data_odierna = String {"format": "yyyy-MM-dd"}
+

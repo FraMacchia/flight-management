@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+<mule xmlns:sdc="http://www.mulesoft.org/schema/mule/sdc" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
-http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/sdc http://www.mulesoft.org/schema/mule/sdc/current/mule-sdc.xsd">
     <http:listener-config name="flight-management-api-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
@@ -184,8 +185,11 @@ fnumber: payload.fnumber
 			</on-error-continue>
 		</error-handler>
     </flow>
-	<flow name="inserimentoDB" doc:id="9899c7f8-0b62-4303-9b65-a47514978e73" >
-		<db:insert doc:name="Insert" doc:id="6e692eee-bbf0-4975-bdc0-e3b4d47c2891" config-ref="Database_Config" target="paylaod_insert">
+	<flow name="InserimentoDB" doc:id="124d7352-825d-4005-abbb-e633ee000fb3" >
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="6350edc7-19ac-479d-b92f-4e6204d3d1de" variableName="dati_volo"/>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="d2fb8753-6ca7-4d7c-9cb8-f3349b2f7693" >
+			<route >
+				<db:insert doc:name="Insert" doc:id="6e692eee-bbf0-4975-bdc0-e3b4d47c2891" config-ref="Database_Config">
 					<db:sql><![CDATA[INSERT INTO test.flight(fnumber,airline, departurecity, destinationcity, fdate, ftime)
 VALUES(:fnumber, :airline, :departurecity, :destinationcity, :fdate, :ftime)]]></db:sql>
 					<db:input-parameters><![CDATA[#[{fnumber: payload.FlightNumber,
@@ -196,7 +200,17 @@ fdate: payload.FlightDate as Date,
 ftime: payload.FlightTime
 }]]]></db:input-parameters>
 				</db:insert>
-		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Il volo numero " ++ payload.FlightNumber as String ++ " è stato aggiunto correttamente"]' doc:name="Set Payload" doc:id="198a7ef1-ed3d-4878-a243-cb90b817f02e" />
+			</route>
+			<route >
+				<db:insert doc:name="Insert" doc:id="9256e016-55fe-4aca-8b54-c124d08f7acb" config-ref="Database_Config">
+					<db:sql ><![CDATA[INSERT INTO test.flight_details(id, price, seats_available)
+VALUES(:flightNumber,NULL,NULL)]]></db:sql>
+					<db:input-parameters ><![CDATA[#[flightNumber: payload.FlightNumber]]]></db:input-parameters>
+				</db:insert>
+				<logger level="INFO" doc:name="Logger" doc:id="5826fab2-399e-4ada-ab6c-8783f41fbce1" message="#[%dw 2.0&#10;output application/json&#10;---&#10;'I dati price e seats_available relativi al volo '++ vars.dati_volo.FlightNumber as String&#10;++' sono da aggiornare. Il loro valore di defaul è NULL']"/>
+			</route>
+		</scatter-gather>
+		<set-payload value='#[%dw 2.0&#10;output application/json&#10;---&#10;"Il volo numero " ++ vars.dati_volo.FlightNumber as String ++ " è stato aggiunto correttamente"]' doc:name="Set Payload" doc:id="198a7ef1-ed3d-4878-a243-cb90b817f02e" />
 		<error-handler >
 			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="4e423429-066f-4016-b012-eae55f702bad" type="ANY">
 				<set-variable value="400" doc:name="Set Variable" doc:id="450eb33c-580f-4ce6-9340-133f906352ed" variableName="httpStatus" />
@@ -210,11 +224,11 @@ ftime: payload.FlightTime
 		<set-variable value="#[payload.FlightNumber]" doc:name="Set Variable" doc:id="ca0451bc-e857-4935-aa1c-addbfe4f02b2" variableName="numero_volo"/>
 		<choice doc:name="Choice" doc:id="77ff7b3e-63ef-45fb-8cf8-11afdcfcac7c" >
 			<when expression="#[payload.FlightDate &gt; vars.data_odierna]">
-				<flow-ref doc:name="Flow Reference" doc:id="9d8b39f1-c2b2-44c5-a4e2-2aa1dc610242" name="inserimentoDB"/>
+				<flow-ref doc:name="Flow Reference" doc:id="9d8b39f1-c2b2-44c5-a4e2-2aa1dc610242" name="InserimentoDB"/>
 				<logger level="INFO" doc:name="Logger" doc:id="b5434080-bfcd-4688-9db9-e69942e63582" message="#['È stato aggiunto un volo con data successiva alla data odierna']"/>
 			</when>
 			<when expression="#[payload.FlightDate == vars.data_odierna]">
-				<flow-ref doc:name="Flow Reference" doc:id="c9fe09fc-66ed-4e02-9d68-19166d2936c1" name="inserimentoDB"/>
+				<flow-ref doc:name="Flow Reference" doc:id="c9fe09fc-66ed-4e02-9d68-19166d2936c1" name="InserimentoDB"/>
 				<logger level="INFO" doc:name="Logger" doc:id="47640603-f19b-4c7d-b81c-22e894481248" message='#["È stato aggiuto un volo che parte in data odierna"]'/>
 			</when>
 			<otherwise>
